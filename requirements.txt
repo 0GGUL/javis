@@ -1,0 +1,6 @@
+streamlit
+pyupbit
+pandas
+numpy
+requests
+python-dotenv
