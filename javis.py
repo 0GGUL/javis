@@ -17,8 +17,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 load_dotenv()
 
-# [버전] V15.9.39 Final (존재하는 코인도 조회 실패 시 봇 꺼짐 방지 패치)
-st.set_page_config(page_title="자비스 V15.9.39 Final", page_icon="🦅", layout="wide")
+# [버전] V15.9.40 Patch (키 인식 오류 자동 보정 기능 탑재)
+st.set_page_config(page_title="자비스 V15.9.40 Patch", page_icon="🦅", layout="wide")
 
 # [2. 세션 초기화]
 if 'quant_report' not in st.session_state: st.session_state['quant_report'] = {} 
@@ -28,11 +28,29 @@ if 'last_scan_time' not in st.session_state: st.session_state['last_scan_time'] 
 if 'monitored_coins' not in st.session_state: st.session_state['monitored_coins'] = []
 if 'wallet_snapshot' not in st.session_state: st.session_state['wallet_snapshot'] = []
 
-# [3. API]
-access_key = os.getenv("UPBIT_ACCESS_KEY")
-secret_key = os.getenv("UPBIT_SECRET_KEY")
-tele_token = os.getenv("TELEGRAM_TOKEN")
-tele_id = os.getenv("TELEGRAM_CHAT_ID")
+# -----------------------------------------------------------------------------
+# [3. API] - 핵심 패치 적용 (공백, 줄바꿈, 따옴표 자동 제거)
+# -----------------------------------------------------------------------------
+def load_key(key_name):
+    try:
+        # 1. Streamlit Secrets에서 먼저 찾기
+        if key_name in st.secrets:
+            val = str(st.secrets[key_name])
+        # 2. 없으면 환경변수(os.getenv)에서 찾기
+        else:
+            val = os.getenv(key_name)
+        
+        if val:
+            # 줄바꿈(\n), 따옴표(", '), 양쪽 공백 제거 -> 순수 키값만 추출
+            return val.strip().replace('\n', '').replace('"', '').replace("'", "")
+        return None
+    except:
+        return None
+
+access_key = load_key("UPBIT_ACCESS_KEY")
+secret_key = load_key("UPBIT_SECRET_KEY")
+tele_token = load_key("TELEGRAM_TOKEN")
+tele_id = load_key("TELEGRAM_CHAT_ID")
 
 def fmt_price(price):
     if price < 1: return f"{price:,.4f}원"
@@ -65,7 +83,7 @@ def execute_buy_logic(ticker, buy_amount, cut_trigger, strategy_name):
         if 'error' in buy_res: return False, f"매수 실패: {buy_res}"
         
         msg = (
-            f"🦅 **자비스 매수 체결 (V15.9.39)**\n\n"
+            f"🦅 **자비스 매수 체결 (V15.9.40)**\n\n"
             f"🎯 종목: {ticker}\n"
             f"💡 등급: {strategy_name}\n"
             f"💰 투입: {buy_amount:,.0f}원\n"
@@ -234,8 +252,8 @@ def analyze_quant_coin(ticker):
         if not strategy_type: 
             recent_df = df_full.iloc[-20:]
             max_price = recent_df['close'].max()
-            current_obv = recent_df['obv'].iloc[-1]
             max_obv = recent_df['obv'].max()
+            current_obv = recent_df['obv'].iloc[-1]
             
             if close < max_price * 0.98:
                 if current_obv >= max_obv * 0.99: 
@@ -451,8 +469,8 @@ def get_full_asset_info():
 # -----------------------------------------------------------------------------
 # [UI]
 # -----------------------------------------------------------------------------
-st.title("🦅 자비스 V15.9.39 Final")
-st.caption("Ghost 모드 + 500원 보장 + KeyError 완벽 방어(개별조회)")
+st.title("🦅 자비스 V15.9.40 Patch")
+st.caption("Ghost 모드 + 500원 보장 + Key 오류 자동 수정")
 
 # 1. 자산 계산
 my_cash, my_total, my_portfolio = get_full_asset_info()
